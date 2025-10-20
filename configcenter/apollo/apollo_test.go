@@ -169,3 +169,27 @@ func TestBuildApolloConfig_MetaAddrAsDefault(t *testing.T) {
 	// MetaAddr should be used as default for IP
 	assert.Equal(t, "http://localhost:8080", apolloConf.IP)
 }
+
+func TestBuildApolloConfig_IPFieldAcceptsURL(t *testing.T) {
+	// Test that IP field accepts full URL (not just bare IP)
+	// This is supported by Apollo SDK as shown in official examples
+	// Reference: https://github.com/apolloconfig/agollo README.md
+	conf := ApolloConf{
+		AppID:    "test-app",
+		MetaAddr: "http://config.example.com:8080",
+	}
+
+	apolloConf := buildApolloConfig(conf)
+
+	// IP field can hold full URL with scheme and port
+	assert.Equal(t, "http://config.example.com:8080", apolloConf.IP)
+
+	// Verify with HTTPS
+	confHTTPS := ApolloConf{
+		AppID:    "test-app",
+		MetaAddr: "https://config.example.com",
+	}
+
+	apolloConfHTTPS := buildApolloConfig(confHTTPS)
+	assert.Equal(t, "https://config.example.com", apolloConfHTTPS.IP)
+}
