@@ -113,25 +113,17 @@ func (s *apolloSubscriber) Value() (string, error) {
 // OnChange is called when Apollo config changes.
 // Implements agollo.ChangeListener interface.
 func (s *apolloSubscriber) OnChange(event *storage.ChangeEvent) {
-	if err := s.loadValue(); err != nil {
-		logx.Errorf("Apollo config reload failed: %v", err)
-		return
-	}
-
-	s.lock.RLock()
-	listeners := make([]func(), len(s.listeners))
-	copy(listeners, s.listeners)
-	s.lock.RUnlock()
-
-	for _, listener := range listeners {
-		listener()
-	}
+	s.handleConfigChange()
 }
 
 // OnNewestChange is called when Apollo config changes to newest.
 // Implements agollo.ChangeListener interface.
 func (s *apolloSubscriber) OnNewestChange(event *storage.FullChangeEvent) {
-	// Trigger reload on any change
+	s.handleConfigChange()
+}
+
+// handleConfigChange handles config reload and notifies all listeners.
+func (s *apolloSubscriber) handleConfigChange() {
 	if err := s.loadValue(); err != nil {
 		logx.Errorf("Apollo config reload failed: %v", err)
 		return
@@ -153,11 +145,13 @@ func (s *apolloSubscriber) loadValue() error {
 
 	// If specific key is set, get that key's value
 	if len(s.conf.Key) > 0 {
-		val := s.client.GetValue(s.conf.Key)
-		if len(val) == 0 {
+		// Check if key exists in namespace
+		cache := s.client.GetConfigCache(s.conf.NamespaceName)
+		val, err := cache.Get(s.conf.Key)
+		if err != nil {
 			return errors.New("key not found in Apollo namespace")
 		}
-		value = val
+		value = toString(val)
 	} else {
 		// Get all content from namespace
 		value, err = s.getAllContent()

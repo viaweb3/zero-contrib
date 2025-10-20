@@ -83,7 +83,11 @@ func exampleSpecificKey() {
 		Type: "json",
 	}, sub)
 
-	dbUrl, _ := cc.GetConfig()
+	dbUrl, err := cc.GetConfig()
+	if err != nil {
+		logx.Errorf("Failed to get database URL: %v", err)
+		return
+	}
 	fmt.Printf("Database URL: %s\n", dbUrl)
 }
 
@@ -101,7 +105,11 @@ func examplePropertiesFormat() {
 		Type: "json",
 	}, sub)
 
-	properties, _ := cc.GetConfig()
+	properties, err := cc.GetConfig()
+	if err != nil {
+		logx.Errorf("Failed to get properties: %v", err)
+		return
+	}
 	fmt.Printf("Properties: %s\n", properties)
 }
 
@@ -133,7 +141,11 @@ func exampleServiceIntegration() {
 
 	// Listen for changes
 	cc.AddListener(func() {
-		config, _ := cc.GetConfig()
+		config, err := cc.GetConfig()
+		if err != nil {
+			logx.Errorf("Failed to get updated config: %v", err)
+			return
+		}
 		svc.UpdateConfig(config)
 	})
 

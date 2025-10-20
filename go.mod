@@ -1,6 +1,6 @@
 module github.com/zeromicro/zero-contrib
 
-go 1.25.1
+go 1.23
 
 require (
 	github.com/apolloconfig/agollo/v4 v4.4.0

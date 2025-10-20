@@ -123,6 +123,16 @@ func TestToString(t *testing.T) {
 			input:    map[string]string{"key": "value"},
 			expected: `{"key":"value"}`,
 		},
+		{
+			name:     "empty string value",
+			input:    "",
+			expected: "",
+		},
+		{
+			name:     "float value",
+			input:    3.14,
+			expected: "3.14",
+		},
 	}
 
 	for _, tt := range tests {
@@ -131,4 +141,31 @@ func TestToString(t *testing.T) {
 			assert.Equal(t, tt.expected, result)
 		})
 	}
+}
+
+func TestBuildApolloConfig_IPOverride(t *testing.T) {
+	// Test that IP field overrides MetaAddr when both are provided
+	conf := ApolloConf{
+		AppID:    "test-app",
+		MetaAddr: "http://localhost:8080",
+		IP:       "192.168.1.100",
+	}
+
+	apolloConf := buildApolloConfig(conf)
+
+	// IP should override MetaAddr
+	assert.Equal(t, "192.168.1.100", apolloConf.IP)
+}
+
+func TestBuildApolloConfig_MetaAddrAsDefault(t *testing.T) {
+	// Test that MetaAddr is used when IP is not provided
+	conf := ApolloConf{
+		AppID:    "test-app",
+		MetaAddr: "http://localhost:8080",
+	}
+
+	apolloConf := buildApolloConfig(conf)
+
+	// MetaAddr should be used as default for IP
+	assert.Equal(t, "http://localhost:8080", apolloConf.IP)
 }
