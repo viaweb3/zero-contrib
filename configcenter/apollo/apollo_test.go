@@ -144,17 +144,55 @@ func TestToString(t *testing.T) {
 }
 
 func TestBuildApolloConfig_IPOverride(t *testing.T) {
-	// Test that IP field overrides MetaAddr when both are provided
-	conf := ApolloConf{
-		AppID:    "test-app",
-		MetaAddr: "http://localhost:8080",
-		IP:       "192.168.1.100",
+	tests := []struct {
+		name     string
+		conf     ApolloConf
+		expected string
+	}{
+		{
+			name: "IP overrides MetaAddr with bare IP",
+			conf: ApolloConf{
+				AppID:    "test-app",
+				MetaAddr: "http://localhost:8080",
+				IP:       "192.168.1.100",
+			},
+			expected: "192.168.1.100",
+		},
+		{
+			name: "IP overrides MetaAddr with HTTP URL",
+			conf: ApolloConf{
+				AppID:    "test-app",
+				MetaAddr: "http://localhost:8080",
+				IP:       "http://config.example.com:8080",
+			},
+			expected: "http://config.example.com:8080",
+		},
+		{
+			name: "IP overrides MetaAddr with HTTPS URL",
+			conf: ApolloConf{
+				AppID:    "test-app",
+				MetaAddr: "http://localhost:8080",
+				IP:       "https://secure.example.com",
+			},
+			expected: "https://secure.example.com",
+		},
+		{
+			name: "IP overrides MetaAddr with URL including path",
+			conf: ApolloConf{
+				AppID:    "test-app",
+				MetaAddr: "http://localhost:8080",
+				IP:       "http://config.example.com:8080/config-service",
+			},
+			expected: "http://config.example.com:8080/config-service",
+		},
 	}
 
-	apolloConf := buildApolloConfig(conf)
-
-	// IP should override MetaAddr
-	assert.Equal(t, "192.168.1.100", apolloConf.IP)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			apolloConf := buildApolloConfig(tt.conf)
+			assert.Equal(t, tt.expected, apolloConf.IP)
+		})
+	}
 }
 
 func TestBuildApolloConfig_MetaAddrAsDefault(t *testing.T) {
@@ -168,40 +206,4 @@ func TestBuildApolloConfig_MetaAddrAsDefault(t *testing.T) {
 
 	// MetaAddr should be used as default for IP
 	assert.Equal(t, "http://localhost:8080", apolloConf.IP)
-}
-
-func TestBuildApolloConfig_IPFieldAcceptsURL(t *testing.T) {
-	// Test that IP field directly accepts full URL (not just bare IP)
-	// This is supported by Apollo SDK as shown in official examples
-	// Reference: https://github.com/apolloconfig/agollo README.md
-	conf := ApolloConf{
-		AppID:    "test-app",
-		MetaAddr: "http://localhost:8080",
-		IP:       "http://config.example.com:8080", // Directly set IP to URL
-	}
-
-	apolloConf := buildApolloConfig(conf)
-
-	// IP field should accept and preserve full URL with scheme and port
-	assert.Equal(t, "http://config.example.com:8080", apolloConf.IP)
-
-	// Verify with HTTPS URL
-	confHTTPS := ApolloConf{
-		AppID:    "test-app",
-		MetaAddr: "http://localhost:8080",
-		IP:       "https://secure.example.com", // Directly set IP to HTTPS URL
-	}
-
-	apolloConfHTTPS := buildApolloConfig(confHTTPS)
-	assert.Equal(t, "https://secure.example.com", apolloConfHTTPS.IP)
-
-	// Verify with URL including path
-	confWithPath := ApolloConf{
-		AppID:    "test-app",
-		MetaAddr: "http://localhost:8080",
-		IP:       "http://config.example.com:8080/config-service",
-	}
-
-	apolloConfWithPath := buildApolloConfig(confWithPath)
-	assert.Equal(t, "http://config.example.com:8080/config-service", apolloConfWithPath.IP)
 }
