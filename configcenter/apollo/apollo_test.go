@@ -171,25 +171,37 @@ func TestBuildApolloConfig_MetaAddrAsDefault(t *testing.T) {
 }
 
 func TestBuildApolloConfig_IPFieldAcceptsURL(t *testing.T) {
-	// Test that IP field accepts full URL (not just bare IP)
+	// Test that IP field directly accepts full URL (not just bare IP)
 	// This is supported by Apollo SDK as shown in official examples
 	// Reference: https://github.com/apolloconfig/agollo README.md
 	conf := ApolloConf{
 		AppID:    "test-app",
-		MetaAddr: "http://config.example.com:8080",
+		MetaAddr: "http://localhost:8080",
+		IP:       "http://config.example.com:8080", // Directly set IP to URL
 	}
 
 	apolloConf := buildApolloConfig(conf)
 
-	// IP field can hold full URL with scheme and port
+	// IP field should accept and preserve full URL with scheme and port
 	assert.Equal(t, "http://config.example.com:8080", apolloConf.IP)
 
-	// Verify with HTTPS
+	// Verify with HTTPS URL
 	confHTTPS := ApolloConf{
 		AppID:    "test-app",
-		MetaAddr: "https://config.example.com",
+		MetaAddr: "http://localhost:8080",
+		IP:       "https://secure.example.com", // Directly set IP to HTTPS URL
 	}
 
 	apolloConfHTTPS := buildApolloConfig(confHTTPS)
-	assert.Equal(t, "https://config.example.com", apolloConfHTTPS.IP)
+	assert.Equal(t, "https://secure.example.com", apolloConfHTTPS.IP)
+
+	// Verify with URL including path
+	confWithPath := ApolloConf{
+		AppID:    "test-app",
+		MetaAddr: "http://localhost:8080",
+		IP:       "http://config.example.com:8080/config-service",
+	}
+
+	apolloConfWithPath := buildApolloConfig(confWithPath)
+	assert.Equal(t, "http://config.example.com:8080/config-service", apolloConfWithPath.IP)
 }
